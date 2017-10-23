@@ -1228,11 +1228,7 @@ class StringProc
 		Proc
 	end
 	def call(*a)
-		if $SAFE < 3
-			proc { $SAFE = 3; eval(@string) }.call
-		else
-			eval(@string)
-		end
+		eval(@string)
 	end
 	def _dump(d=nil)
 		@string
@@ -2542,7 +2538,7 @@ class Script
 				else
 					begin
 						while (script = Script.current) and script.current_label
-							proc { foo = script.labels[script.current_label]; foo.untaint; $SAFE = 3; eval(foo, script_binding, script.name, 1) }.call
+							proc { foo = script.labels[script.current_label]; foo.untaint; eval(foo, script_binding, script.name, 1) }.call
 							Script.current.get_next_label
 						end
 					rescue SystemExit
@@ -3088,7 +3084,7 @@ class ExecScript<Script
 				begin
 					script_binding = Scripting.new.script
 					eval('script = Script.current', script_binding, script.name.to_s)
-					proc { cmd_data.untaint; $SAFE = 3; eval(cmd_data, script_binding, script.name.to_s) }.call
+					proc { cmd_data.untaint; eval(cmd_data, script_binding, script.name.to_s) }.call
 					Script.current.kill
 				rescue SystemExit
 					Script.current.kill
@@ -3169,7 +3165,7 @@ class ExecScript<Script
 						else
 							script_binding = Scripting.new.script
 							eval('script = Script.current', script_binding, script.name.to_s)
-							proc { cmd_data.untaint; $SAFE = 3; eval(cmd_data, script_binding, script.name.to_s) }.call
+							proc { cmd_data.untaint; eval(cmd_data, script_binding, script.name.to_s) }.call
 						end
 						Script.current.kill
 					rescue SystemExit
@@ -8021,11 +8017,7 @@ module Games
 				if options[:line]
 					line = options[:line]
 				end
-				if $SAFE < 3
-					proc { $SAFE = 3; eval(formula) }.call.to_f
-				else
-					eval(formula).to_f
-				end
+				eval(formula).to_f
 			end
 			def timeleft=(val)
 				@timeleft = val
@@ -8330,11 +8322,7 @@ module Games
 							return false
 						end
 						begin
-							if $SAFE < 3
-								proc { $SAFE = 3; eval(@cast_proc) }.call
-							else
-								eval(@cast_proc)
-							end
+						eval(@cast_proc)
 						rescue
 							echo "cast: error: #{$!}"
 							respond $!.backtrace[0..2]
@@ -8456,11 +8444,7 @@ module Games
 			def method_missing(*args)
 				if @@bonus_list.include?(args[0].to_s.gsub('_', '-'))
 					if @bonus[args[0].to_s.gsub('_', '-')]
-						if $SAFE < 3
-							proc { $SAFE = 3; eval(@bonus[args[0].to_s.gsub('_', '-')]) }.call.to_i
-						else
-							eval(@bonus[args[0].to_s.gsub('_', '-')]).to_i
-						end
+						eval(@bonus[args[0].to_s.gsub('_', '-')]).to_i
 					else
 						0
 					end
@@ -8491,11 +8475,7 @@ module Games
 					else
 						if formula
 							formula.untaint if formula.tainted?
-							if $SAFE < 3
-								proc { $SAFE = 3; eval(formula) }.call.to_i
-							else
-								eval(formula).to_i
-							end
+							eval(formula).to_i
 						else
 							0
 						end
