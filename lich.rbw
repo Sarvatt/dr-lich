@@ -4452,13 +4452,23 @@ end
 
 def waitrt
    wait_until { (XMLData.roundtime_end.to_f - Time.now.to_f + XMLData.server_time_offset.to_f) > 0 }
-   sleep((XMLData.roundtime_end.to_f - Time.now.to_f + XMLData.server_time_offset.to_f + "0.6".to_f).abs)
+   rt = (((XMLData.roundtime_end.to_f - Time.now.to_f + XMLData.server_time_offset.to_f + "0.2".to_f).abs)*0.9)
+   echo("waitrt #{rt}")
+   sleep rt
 end
 
 def waitrt?
-   rt = XMLData.roundtime_end.to_f - Time.now.to_f + XMLData.server_time_offset.to_f + "0.6".to_f
-   if rt > 0
+   #rt = XMLData.roundtime_end.to_f - Time.now.to_f + XMLData.server_time_offset.to_f + "0.6".to_f
+   #echo("XMLData.roundtime_end.to_f - Time.now.to_f = #{XMLData.roundtime_end.to_f - Time.now.to_f}")
+   #echo("XMLData.server_time_offset.to_f = #{XMLData.server_time_offset.to_f}")
+   rt = (XMLData.roundtime_end.to_f - Time.now.to_f) + ((XMLData.server_time_offset.to_f)*0.75)
+   unless rt < 0
+      echo("waitrt? #{rt}")
       sleep rt
+#   else
+#      rt = 0.001
+#      echo("waitrt? #{rt}")
+#      sleep rt
    end
 end
 
@@ -4954,7 +4964,7 @@ def wait_until(announce=nil)
       respond(announce)
    end
    until yield
-      sleep 0.25
+      sleep 0.1
    end
    Thread.current.priority = priosave
 end
@@ -4966,7 +4976,7 @@ def wait_while(announce=nil)
       respond(announce)
    end
    while yield
-      sleep 0.25
+      sleep 0.1
    end
    Thread.current.priority = priosave
 end
@@ -5695,7 +5705,8 @@ def fput(message, *waitingfor)
 
    while string = get
       if string =~ /(?:\.\.\.wait |Wait )[0-9]+/
-         hold_up = string.slice(/[0-9]+/).to_i
+         hold_up = (string.slice(/[0-9]+/).to_i)*0.8
+         echo("fput>hold_up #{hold_up}") 
          sleep(hold_up) unless hold_up.nil?
          clear
          put(message)
@@ -5707,7 +5718,7 @@ def fput(message, *waitingfor)
       elsif string =~ /stunned|can't do that while|cannot seem|^(?!You rummage).*can't seem|don't seem|Sorry, you may only type ahead/
          if dead?
             echo "You're dead...! You can't do that!"
-            sleep 1
+            sleep 0.2
             script.downstream_buffer.unshift(string)
             return false
          elsif checkstunned
@@ -5719,7 +5730,7 @@ def fput(message, *waitingfor)
                sleep("0.25".to_f)
             end
          elsif string =~ /Sorry, you may only type ahead/
-            sleep 1
+            sleep 0.2
          else
             sleep 0.1
             script.downstream_buffer.unshift(string)
@@ -5737,7 +5748,7 @@ def fput(message, *waitingfor)
                script.downstream_buffer.unshift(string)
                return foundit
             end
-            sleep 1
+            sleep 0.2
             clear
             put(message)
             next
