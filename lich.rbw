@@ -37,7 +37,7 @@
 #
 
 # Based on Lich 4.6.44
-LICH_VERSION = '4.11.0f'
+LICH_VERSION = '4.11.1f'
 TESTING = false
 PARSE_SAFE = (RUBY_VERSION >= '2.3') ? 1 : 3
 
@@ -66,6 +66,8 @@ require 'zlib'
 require 'drb'
 require 'resolv'
 require 'digest/md5'
+
+$time_offset_array = []
 
 begin
    # stupid workaround for Windows
@@ -4451,25 +4453,36 @@ def parse_list(string)
 end
 
 def waitrt
-   wait_until { (XMLData.roundtime_end.to_f - Time.now.to_f + XMLData.server_time_offset.to_f) > 0 }
-   rt = (((XMLData.roundtime_end.to_f - Time.now.to_f + XMLData.server_time_offset.to_f + "0.2".to_f).abs)*0.9)
-   echo("waitrt #{rt}")
-   sleep rt
+   waitrt?
 end
 
 def waitrt?
-   #rt = XMLData.roundtime_end.to_f - Time.now.to_f + XMLData.server_time_offset.to_f + "0.6".to_f
-   #echo("XMLData.roundtime_end.to_f - Time.now.to_f = #{XMLData.roundtime_end.to_f - Time.now.to_f}")
-   #echo("XMLData.server_time_offset.to_f = #{XMLData.server_time_offset.to_f}")
-   rt = (XMLData.roundtime_end.to_f - Time.now.to_f) + ((XMLData.server_time_offset.to_f)*0.75)
-   unless rt < 0
-      echo("waitrt? #{rt}")
+   offset = getOffset
+   rt = XMLData.roundtime_end.to_f - Time.now.to_f + offset - 0.1
+   
+   if rt > 0
+      # echo "RT End:     #{XMLData.roundtime_end.to_f}"
+      # echo "ServOffset: #{offset}"
+      # echo "Now:        #{Time.now.to_f}"
+      # echo("old waitrt? #{XMLData.roundtime_end.to_f - Time.now.to_f + XMLData.server_time_offset.to_f + "0.6".to_f}")
+      # echo("new waitrt? #{rt}")
       sleep rt
-#   else
-#      rt = 0.001
-#      echo("waitrt? #{rt}")
-#      sleep rt
    end
+end
+
+def getOffset
+  max_size = 1000
+  $time_offset_array << XMLData.server_time_offset.to_f
+  
+  if $time_offset_array.size > max_size
+    $time_offset_array = $time_offset_array.last(max_size)
+  end
+  
+  # Return the most frequent server offset
+  # return $time_offset_array.max_by { |i| $time_offset_array.count(i) }
+  
+  # Return the average server offset
+  $time_offset_array.reduce(:+) / $time_offset_array.size.to_f
 end
 
 def waitcastrt
@@ -4964,7 +4977,7 @@ def wait_until(announce=nil)
       respond(announce)
    end
    until yield
-      sleep 0.1
+      sleep 0.25
    end
    Thread.current.priority = priosave
 end
@@ -4976,7 +4989,7 @@ def wait_while(announce=nil)
       respond(announce)
    end
    while yield
-      sleep 0.1
+      sleep 0.25
    end
    Thread.current.priority = priosave
 end
@@ -5705,8 +5718,7 @@ def fput(message, *waitingfor)
 
    while string = get
       if string =~ /(?:\.\.\.wait |Wait )[0-9]+/
-         hold_up = (string.slice(/[0-9]+/).to_i)*0.8
-         echo("fput>hold_up #{hold_up}") 
+         hold_up = string.slice(/[0-9]+/).to_i
          sleep(hold_up) unless hold_up.nil?
          clear
          put(message)
@@ -5718,7 +5730,7 @@ def fput(message, *waitingfor)
       elsif string =~ /stunned|can't do that while|cannot seem|^(?!You rummage).*can't seem|don't seem|Sorry, you may only type ahead/
          if dead?
             echo "You're dead...! You can't do that!"
-            sleep 0.2
+            sleep 1
             script.downstream_buffer.unshift(string)
             return false
          elsif checkstunned
@@ -5730,7 +5742,9 @@ def fput(message, *waitingfor)
                sleep("0.25".to_f)
             end
          elsif string =~ /Sorry, you may only type ahead/
-            sleep 0.2
+            sleep 0.5
+            clear
+            put(message)
          else
             sleep 0.1
             script.downstream_buffer.unshift(string)
@@ -5748,7 +5762,7 @@ def fput(message, *waitingfor)
                script.downstream_buffer.unshift(string)
                return foundit
             end
-            sleep 0.2
+            sleep 1
             clear
             put(message)
             next
