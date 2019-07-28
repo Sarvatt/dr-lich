@@ -3959,7 +3959,7 @@ class Map
                      room['tags'] = Array.new
                      room['unique_loot'] = Array.new
                      room['room_objects'] = Array.new
-                     room['nofuzzy'] = FalseClass.new
+                     room['nofuzzy'] = Array.new
                   elsif element =~ /^(?:image|tsoran)$/ and attributes['name'] and attributes['x'] and attributes['y'] and attributes['size']
                      room['image'] = attributes['name']
                      room['image_coords'] = [ (attributes['x'].to_i - (attributes['size']/2.0).round), (attributes['y'].to_i - (attributes['size']/2.0).round), (attributes['x'].to_i + (attributes['size']/2.0).round), (attributes['y'].to_i + (attributes['size']/2.0).round) ]
